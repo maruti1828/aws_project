@@ -1,0 +1,32 @@
+flowchart TD
+    U[Users / Browsers] --> IGW[Internet Gateway]
+    IGW --> ALB[Internet-facing Application Load Balancer]
+    ALB --> LISTENER[HTTP Listener]
+    LISTENER --> TG[Target Group + Health Checks]
+
+    subgraph VPC[Amazon VPC - two Availability Zones]
+      subgraph AZA[Availability Zone A]
+        EC2A[EC2 Application Instance A]
+        EBS_A[EBS Volume]
+      end
+      subgraph AZB[Availability Zone B]
+        EC2B[EC2 Application Instance B]
+        EBS_B[EBS Volume]
+      end
+      subgraph Optional[Additional capacity when scaling]
+        EC2C[EC2 Application Instance C]
+      end
+    end
+
+    TG --> EC2A
+    TG --> EC2B
+    TG -. optional target .-> EC2C
+
+    ASG[Auto Scaling Group: min 2 / desired 2 / max 3] --> EC2A
+    ASG --> EC2B
+    ASG -. scale out .-> EC2C
+    LT[Launch Template] --> ASG
+    AMI[Amazon Machine Image] --> LT
+    EBS_A --> SNAP[EBS Snapshots]
+    EBS_B --> SNAP
+    CW[CloudWatch metrics / scaling policy] --> ASG
